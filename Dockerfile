@@ -4,9 +4,7 @@ WORKDIR /code
  
 COPY ./requirements.txt /code/requirements.txt
 
-RUN apk add build-base
- 
-RUN apk add build-base
+RUN apt update && apt upgrade && apt install build-base
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
  
