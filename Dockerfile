@@ -3,6 +3,8 @@ FROM python:3.7
 WORKDIR /code
  
 COPY ./requirements.txt /code/requirements.txt
+
+RUN apk add build-base
  
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
  
