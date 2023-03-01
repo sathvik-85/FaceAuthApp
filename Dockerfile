@@ -6,6 +6,8 @@ COPY ./requirements.txt /code/requirements.txt
 
 RUN apt update && apt upgrade && apt install build-base
 
+
+
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
  
 COPY ./app /code/app
