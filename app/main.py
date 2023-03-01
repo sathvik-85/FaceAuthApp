@@ -73,7 +73,7 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
 
 def hash_func(plain_pass, hashed_pass,salt) -> bool:
     plain_pass_bytes = plain_pass.encode('utf-8')
-    plain_pass_hashed = bcrypt.hashpw(plain_pass_bytes, salt.encode())
+    plain_pass_hashed = bcrypt.hashpw(plain_pass_bytes, salt)
     if plain_pass_hashed == hashed_pass:
         return True
 
@@ -114,7 +114,7 @@ async def user_home(user:str = Depends(token_check)):
 @app.post("/register")
 async def user_register(username:str = Form(), password:str = Form()):
     salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode(), salt.decode("utf-8"))
+    hashed = bcrypt.hashpw(password.encode(), salt)
     response = collection.find_one({"username":username})
     if not response:
         collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2]})
