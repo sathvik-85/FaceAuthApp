@@ -111,17 +111,6 @@ async def user_private_info(user:None = Depends(token_check)):
 async def user_home(user:str = Depends(token_check)):  
     return {"msg":user}
 
-@app.get("/messi")
-async def user_home():  
-    return {"msg":"pendu"}
-
-@app.get("/moneymar")
-async def user_home():  
-    return {"msg":"pendu"}
-
-@app.get("/sterling")
-async def user_home():  
-    return {"msg":"ster"}
 
 
 @app.post("/register")
