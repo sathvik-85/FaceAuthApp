@@ -1,6 +1,7 @@
 import os
 import time
 import bcrypt
+import hashlib
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 from jose import jwt,JWTError
@@ -114,7 +115,7 @@ async def user_home(user:str = Depends(token_check)):
 @app.post("/register")
 async def user_register(username:str = Form(), password:str = Form()):
     salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode(), salt.encode())
+    hashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(password).digest()), salt)
     response = collection.find_one({"username":username})
     if not response:
         collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2]})
