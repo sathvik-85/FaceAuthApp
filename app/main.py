@@ -1,6 +1,8 @@
 import os
 import time
+import base64
 import bcrypt
+import hashlib
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 from jose import jwt,JWTError
@@ -72,7 +74,7 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 def hash_func(plain_pass, hashed_pass,salt) -> bool:
-    plain_pass_hashed = bcrypt.hashpw(plain_pass.encode(), salt.encode())
+    plain_pass_hashed = bcrypt.hashpw(plain_pass, salt)
     if plain_pass_hashed == hashed_pass:
         return True
 
@@ -117,8 +119,7 @@ async def user_home():
 @app.post("/register")
 async def user_register(username:str = Form(), password:str = Form()):
     salt = bcrypt.gensalt()
-    
-    hashed = bcrypt.hashpw(password.encode(), salt)
+    hashed = bcrypt.hashpw(password, salt)
     response = collection.find_one({"username":username})
     if not response:
         collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2]})
