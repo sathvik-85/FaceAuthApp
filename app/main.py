@@ -111,6 +111,12 @@ async def user_private_info(user:None = Depends(token_check)):
 async def user_home(user:str = Depends(token_check)):  
     return {"msg":user}
 
+@app.get("/messi")
+async def user_home(user:str = Depends(token_check)):  
+    import locale
+   
+    return {"msg":locale.getpreferredencoding()}
+
 
 
 @app.post("/register")
