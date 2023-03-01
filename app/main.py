@@ -72,7 +72,7 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 def hash_func(plain_pass, hashed_pass,salt) -> bool:
-    plain_pass_hashed = bcrypt.hashpw(plain_pass.encode(), salt)
+    plain_pass_hashed = bcrypt.hashpw(plain_pass.encode(), salt.encode())
     if plain_pass_hashed == hashed_pass:
         return True
 
@@ -109,10 +109,15 @@ async def user_private_info(user:None = Depends(token_check)):
 async def user_home(user:str = Depends(token_check)):  
     return {"msg":user}
 
+@app.get("/messi")
+async def user_home():  
+    return {"msg":"pendu"}
+
 
 @app.post("/register")
 async def user_register(username:str = Form(), password:str = Form()):
     salt = bcrypt.gensalt()
+    
     hashed = bcrypt.hashpw(password.encode(), salt)
     response = collection.find_one({"username":username})
     if not response:
