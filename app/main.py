@@ -119,6 +119,10 @@ async def user_home():
 async def user_home():  
     return {"msg":"pendu"}
 
+@app.get("/sterling")
+async def user_home():  
+    return {"msg":"ster"}
+
 
 @app.post("/register")
 async def user_register(username:str = Form(), password:str = Form()):
