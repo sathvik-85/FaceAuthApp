@@ -73,7 +73,7 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
 
 def hash_func(plain_pass, hashed_pass,salt) -> bool:
     plain_pass_bytes = plain_pass.encode('utf-8')
-    plain_pass_hashed = bcrypt.hashpw(plain_pass_bytes, salt)
+    plain_pass_hashed = bcrypt.hashpw(plain_pass_bytes, salt.encode())
     if plain_pass_hashed == hashed_pass:
         return True
 
