@@ -112,7 +112,7 @@ async def user_home(user:str = Depends(token_check)):
     return {"msg":user}
 
 @app.get("/messi")
-async def user_home(user:str = Depends(token_check)):  
+async def user_home():  
     import locale
    
     return {"msg":locale.getpreferredencoding()}
