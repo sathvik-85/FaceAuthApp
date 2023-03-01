@@ -115,6 +115,10 @@ async def user_home(user:str = Depends(token_check)):
 async def user_home():  
     return {"msg":"pendu"}
 
+@app.get("/moneymar")
+async def user_home():  
+    return {"msg":"pendu"}
+
 
 @app.post("/register")
 async def user_register(username:str = Form(), password:str = Form()):
