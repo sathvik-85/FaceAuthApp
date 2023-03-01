@@ -114,7 +114,7 @@ async def user_home(user:str = Depends(token_check)):
 @app.post("/register")
 async def user_register(username:str = Form(), password:str = Form()):
     salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(str(password.encode()), salt)
+    hashed = bcrypt.hashpw(password.encode(), salt.encode())
     response = collection.find_one({"username":username})
     if not response:
         collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2]})
