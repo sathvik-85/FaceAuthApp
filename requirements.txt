@@ -3,7 +3,7 @@ jose==1.0.0
 passlib==1.7.4
 pydantic==1.9.1
 pymongo==4.3.3
-python-dotenv==1.0.0
-python_bcrypt==0.3.2
+python-dotenv==0.20.0
+python-bcrypt==0.3.2
 python-jose==3.3.0
 uvicorn==0.20.0
