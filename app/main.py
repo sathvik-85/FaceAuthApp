@@ -1,8 +1,8 @@
 import os
 import time
-import base64
 import bcrypt
-import hashlib
+import boto3
+import face_recognition
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 from jose import jwt,JWTError
