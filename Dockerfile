@@ -5,7 +5,9 @@ WORKDIR /code
 
 RUN apt-get update && \
     apt-get install -y build-essential gcc && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/* &&\
+    apt-get install cmake
+
 
 RUN pip install dlib
  
