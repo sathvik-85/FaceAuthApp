@@ -1,7 +1,7 @@
 import os
 import time
 import bcrypt
-import boto3
+import dlib
 import face_recognition
 from pymongo import MongoClient
 from datetime import datetime, timedelta
@@ -35,6 +35,7 @@ db = client[f"{DB}"]
 collection = db[f"{COLLECTION}"]
 
 
+print(dlib.__version__)
 
 
 
