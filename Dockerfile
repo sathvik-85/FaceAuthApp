@@ -1,11 +1,6 @@
 
 
-FROM python:3.7
-
-
-COPY --from=orgoro/dlib-opencv-python:latest /usr/local/lib/python3.7/site-packages /usr/local/lib/python3.7/site-packages
-
-RUN mkdir /code
+FROM orgoro/dlib-opencv-python:latest
 
 WORKDIR /code
 
