@@ -2,7 +2,7 @@ FROM orgoro/dlib-opencv-python:latest AS dlib
 
 FROM python:3.7
 
-COPY --from=dlib /usr/local/lib/python3.7/site-packages/dlib /usr/local/lib/python3.7/site-packages/dlib
+COPY --from=dlib /usr/local/lib/python3.7/site-packages/dlib /../usr/local/lib/python3.7/site-packages/dlib
 
 RUN mkdir /code
 
