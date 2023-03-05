@@ -4,8 +4,6 @@ FROM python:3.7
 
 COPY --from=dlib /usr/local/lib/python3.7/site-packages/dlib /../usr/local/lib/python3.7/site-packages/dlib
 
-RUN mkdir /code
-
 WORKDIR /code
 
 COPY ./requirements.txt /code/requirements.txt
