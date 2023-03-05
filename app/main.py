@@ -1,7 +1,7 @@
 import os
 import time
 import bcrypt
-import dlib
+import pickle
 import face_recognition
 from pymongo import MongoClient
 from datetime import datetime, timedelta
@@ -9,7 +9,7 @@ from jose import jwt,JWTError
 from typing import Union
 from dotenv import load_dotenv
 from os.path import join,dirname
-from fastapi import FastAPI,Depends,HTTPException,status,Form,Request
+from fastapi import FastAPI,Depends,HTTPException,status,Form,Request,UploadFile
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -75,6 +75,10 @@ def hash_func(plain_pass, hashed_pass,salt) -> bool:
     if plain_pass_hashed == hashed_pass:
         return True
 
+def serialize(known_face_encoding):
+    return pickle.dumps(known_face_encoding)
+
+
 
 @app.post("/token", response_model = Token)
 async def user_register(formData:OAuth2PasswordRequestForm = Depends()):
@@ -110,18 +114,19 @@ async def user_home(user:str = Depends(token_check)):
 
 @app.get("/messi")
 async def user_home():  
-    return {"msg":dlib.__version__,"msg2":face_recognition.__version__}
-
-
+    return {"msg":"hello"}
 
 
 @app.post("/register")
-async def user_register(username:str = Form(), password:str = Form()):
+async def user_register(file:UploadFile,username:str = Form(), password:str = Form()):
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     response = collection.find_one({"username":username})
+    known_img = face_recognition.load_image_file("sharonstone1.jpg")
+    known_face_encoding = face_recognition.face_encodings(known_img)[0]
+    serialized_encoding = serialize(known_face_encoding)
     if not response:
-        collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2]})
+        collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2],"known_encoding":serialized_encoding})
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
