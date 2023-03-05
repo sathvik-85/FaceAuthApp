@@ -114,6 +114,7 @@ async def user_home():
 
 
 
+
 @app.post("/register")
 async def user_register(username:str = Form(), password:str = Form()):
     salt = bcrypt.gensalt()

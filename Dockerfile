@@ -1,10 +1,13 @@
-FROM orgoro/dlib-opencv-python:latest AS dlib
+
 
 FROM python:3.7
 
 
-
-COPY --from=dlib /usr/local/lib/python3.7/site-packages/dlib /usr/local/lib/python3.7/site-packages/dlib
+COPY --from=orgoro/dlib-opencv-python:latest /usr/local/lib/python3.7/site-packages /usr/local/lib/python3.7/site-packages
+COPY --from=orgoro/dlib-opencv-python:latest /usr/local/include/dlib /usr/local/include/dlib
+COPY --from=orgoro/dlib-opencv-python:latest /usr/local/lib/libdlib.so* /usr/local/lib/
+COPY --from=orgoro/dlib-opencv-python:latest /usr/local/lib/libopencv* /usr/local/lib/
+ENV PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.7/site-packages
 
 RUN mkdir /code
 
