@@ -35,10 +35,6 @@ db = client[f"{DB}"]
 collection = db[f"{COLLECTION}"]
 
 
-print(dlib.__version__)
-
-
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")    
 user_db = {}
 
@@ -116,7 +112,7 @@ async def user_home(user:str = Depends(token_check)):
 async def user_home():  
     import locale
    
-    return {"msg":locale.getpreferredencoding()}
+    return {"msg":dlib.__version__}
 
 
 
