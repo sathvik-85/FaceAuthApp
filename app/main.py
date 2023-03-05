@@ -110,8 +110,6 @@ async def user_home(user:str = Depends(token_check)):
 
 @app.get("/messi")
 async def user_home():  
-    
-   
     return {"msg":dlib.__version__}
 
 
