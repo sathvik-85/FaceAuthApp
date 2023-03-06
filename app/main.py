@@ -112,7 +112,7 @@ async def user_face_auth(username:str,file:UploadFile = File(...)):
         )
 
 @app.post("/token/cred-login", response_model = Token)
-async def user_cred_login(img:bool,username:str,password:str,file:UploadFile=File(...)):
+async def user_cred_login(username:str,password:str):
     user = collection.find_one({"username":username})
 
     if not user:
@@ -121,7 +121,7 @@ async def user_cred_login(img:bool,username:str,password:str,file:UploadFile=Fil
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    pass_verified = hash_func(formData.password,user["password"],user["salt"])
+    pass_verified = hash_func(password,user["password"],user["salt"])
     if pass_verified:
         access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
         access_token = create_access_token(
