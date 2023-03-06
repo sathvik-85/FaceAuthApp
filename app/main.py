@@ -86,46 +86,55 @@ async def file_to_nparray(file):
     pil_image = Image.open(io.BytesIO(file_content))
     return np.array(pil_image)
 
-
-@app.post("/token", response_model = Token)
-async def user_register(img:bool,username:str,password:str,file:UploadFile=File(...)):
+@app.post("/token/face-auth", response_model = Token)
+async def user_face_auth(username:str,file:UploadFile = File(...)):
     user = collection.find_one({"username":username})
-    if not img:
-
-        if not user:
-            raise  HTTPException(
+    if not user:
+        raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
+                detail="Cannot Find User.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        pass_verified = hash_func(formData.password,user["password"],user["salt"])
-        if pass_verified:
-            access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
-            access_token = create_access_token(
-            data={"sub": user["username"]}, expires_delta=access_token_expires)
-            
-            return {"access_token":access_token, "token_type":"Bearer"}
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+    unknown_img = await file_to_nparray(file)
+    unknown_face_encoding = face_recognition.face_encodings(unknown_img)[0]
+    known_face_encoding = pickle.loads(user["known_encoding"])
+    result = face_recognition.compare_faces([known_face_encoding], unknown_face_encoding)
+    if result[0] ==True:
+        access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+        access_token = create_access_token(
+        data={"sub": user["username"]}, expires_delta=access_token_expires)
+        return {"access_token":access_token,"token_type":"Bearer"}
     else:
-        unknown_img = await file_to_nparray(file)
-        unknown_face_encoding = face_recognition.face_encodings(unknown_img)[0]
-        known_face_encoding = pickle.loads(user["known_encoding"])
-        result = face_recognition.compare_faces([known_face_encoding], unknown_face_encoding)
-        if result[0] ==True:
-            access_token = create_access_token(
-            data={"sub": user["username"]}, expires_delta=access_token_expires)
-            return {"access_token":access_token,"token_type":"Bearer"}
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Face Not Recognised",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Face Not Recognised",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+@app.post("/token/cred-login", response_model = Token)
+async def user_cred_login(img:bool,username:str,password:str,file:UploadFile=File(...)):
+    user = collection.find_one({"username":username})
+
+    if not user:
+        raise  HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    pass_verified = hash_func(formData.password,user["password"],user["salt"])
+    if pass_verified:
+        access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+        access_token = create_access_token(
+        data={"sub": user["username"]}, expires_delta=access_token_expires)
+        
+        return {"access_token":access_token, "token_type":"Bearer"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
         
 
 
