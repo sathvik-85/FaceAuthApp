@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import time
 import bcrypt
 import pickle
@@ -46,6 +47,16 @@ class Token(BaseModel):
     access_token:str
     token_type:str
 
+
+@app.middleware('http')
+async def input_validation(request : Request, call_next):
+    if request.url.path == '/register':
+        request_body = await request.form()
+        password_pattern = r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$'
+        if not re.match(password_pattern, request_body["password"]):
+            return {"error":"password must contain atleast 8 Char, 1 Uppercase, 2 digits and 1 speciall char."}
+    
+
 def token_check(token :str = Depends(oauth2_scheme)):
     try:
         user = jwt.decode(token,SECRET_KEY,algorithms=[ALGORITHM])
@@ -85,6 +96,7 @@ async def file_to_nparray(file):
     file_content = await file.read()
     pil_image = Image.open(io.BytesIO(file_content))
     return np.array(pil_image)
+
 
 @app.post("/token/face-auth", response_model = Token)
 async def user_face_auth(username:str,file:UploadFile = File(...)):
@@ -135,11 +147,7 @@ async def user_cred_login(username:str,password:str):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-        
 
-
-
-    
 @app.get("/private")
 async def user_private_info(user:None = Depends(token_check)):
     return {"msg":"This is a secret","user":user}
