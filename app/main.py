@@ -1,6 +1,7 @@
 import os
 import io
 import re
+import PIL
 import time
 import bcrypt
 import pickle
@@ -8,6 +9,7 @@ import face_recognition
 import numpy as np
 from PIL import Image
 from pymongo import MongoClient
+from starlette.responses import JSONResponse
 from datetime import datetime, timedelta
 from jose import jwt,JWTError
 from typing import Union
@@ -50,11 +52,19 @@ class Token(BaseModel):
 
 @app.middleware('http')
 async def input_validation(request : Request, call_next):
+    response = None
     if request.url.path == '/register':
         request_body = await request.form()
         password_pattern = r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$'
-        if not re.match(password_pattern, request_body["password"]):
-            return {"error":"password must contain atleast 8 Char, 1 Uppercase, 2 digits and 1 speciall char."}
+        if re.match(password_pattern, request_body["password"]):
+            response = await call_next(request)
+            return response
+        else:
+            return JSONResponse({"error":"password must contain atleast 8 Char, 1 Uppercase, 2 digits and 1 speciall char."})
+    
+    response = await call_next(request)
+    
+    return response
     
 
 def token_check(token :str = Depends(oauth2_scheme)):
@@ -163,7 +173,14 @@ async def user_home():
 
 @app.post("/register")
 async def user_register(file:UploadFile=File(...),username:str = Form(), password:str = Form()):
-    known_img = await file_to_nparray(file)
+    try:
+        known_img = await file_to_nparray(file)
+    except PIL.UnidentifiedImageError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not an Image or Supported Image type.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     response = collection.find_one({"username":username})
