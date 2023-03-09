@@ -50,23 +50,6 @@ class Token(BaseModel):
     token_type:str
 
 
-@app.middleware('http')
-async def input_validation(request : Request, call_next):
-    response = None
-    if request.url.path == '/register':
-        request_body = await request.form()
-        password_pattern = r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$'
-        if re.match(password_pattern, request_body["password"]):
-            response = await call_next(request)
-            return response
-        else:
-            return JSONResponse({"error":"password must contain atleast 8 Char, 1 Uppercase, 2 digits and 1 speciall char."})
-    
-    response = await call_next(request)
-    
-    return response
-    
-
 def token_check(token :str = Depends(oauth2_scheme)):
     try:
         user = jwt.decode(token,SECRET_KEY,algorithms=[ALGORITHM])
