@@ -49,6 +49,28 @@ class Token(BaseModel):
     access_token:str
     token_type:str
 
+def input_validation(username:str, password:str):
+    username_pattern = r'^[a-zA-Z_]{5,18}$'
+    password_pattern = r"^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,12}$"
+
+    if not re.search(username_pattern,username):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+             detail="The username must be between 5-18 characters, must not contain spaces or digits or special characters",
+             headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+
+    if not re.search(password_pattern,password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+             detail="The password must be between 8-12 characters, must contain atleast 1 Capital letter,1 digit, 1 special character",
+             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return True
+
+
+
+
 
 def token_check(token :str = Depends(oauth2_scheme)):
     try:
@@ -156,27 +178,29 @@ async def user_home():
 
 @app.post("/register")
 async def user_register(file:UploadFile=File(...),username:str = Form(), password:str = Form()):
-    try:
-        known_img = await file_to_nparray(file)
-    except PIL.UnidentifiedImageError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not an Image or Supported Image type.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-    response = collection.find_one({"username":username})
-    known_face_encoding = face_recognition.face_encodings(known_img)[0]
-    serialized_encoding = serialize(known_face_encoding)
-    if not response:
-        collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2],"known_encoding":serialized_encoding})
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User already exist",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return {"msg":"User successfully Created"}
+    user_is_valid = input_validation(username,password)
+    if user_is_valid:
+        try:
+            known_img = await file_to_nparray(file)
+        except PIL.UnidentifiedImageError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not an Image or Supported Image type.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+        response = collection.find_one({"username":username})
+        known_face_encoding = face_recognition.face_encodings(known_img)[0]
+        serialized_encoding = serialize(known_face_encoding)
+        if not response:
+            collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2],"known_encoding":serialized_encoding})
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User already exist",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return {"msg":"User successfully Created"}
 
-    
+        
