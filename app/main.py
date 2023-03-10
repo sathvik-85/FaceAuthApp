@@ -6,7 +6,7 @@ import time
 import bcrypt
 import pickle
 import secrets
-import aiosmtplib
+import smtplib
 import face_recognition
 import numpy as np
 from PIL import Image
@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 from os.path import join,dirname
 from fastapi import FastAPI,Depends,HTTPException,status,Form,Request,UploadFile,File
 from pydantic import BaseModel
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
@@ -113,7 +115,7 @@ async def file_to_nparray(file):
     return np.array(pil_image)
 
 async def send_otp(email: str):
-     otp = str(secrets.randbelow(10000)).zfill(4)
+    otp = str(secrets.randbelow(10000)).zfill(4)
     message = f"Your OTP for authentication is {otp}"
     
     try:
@@ -135,6 +137,7 @@ async def send_otp(email: str):
 
             # Send email
             smtp.sendmail(SERVER_MAIL, email, msg.as_string())
+            print("sent mail")
 
     except Exception as e:
         print(f"Error sending email: {e}")
@@ -157,7 +160,7 @@ async def user_face_auth(username:str,file:UploadFile = File(...)):
     if result[0] ==True:
         print(user["email"])
         otp = await send_otp(user["email"])
-        collection/update_one({"username":user["username"]},{"$set":{"otp":otp}})
+        collection.update_one({"username":user["username"]},{"$set":{"otp":otp}})
         return {"msg":"OTP sent to your registered mail."}
         # access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
         # access_token = create_access_token(
