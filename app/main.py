@@ -114,13 +114,19 @@ async def file_to_nparray(file):
 
 async def send_otp(email: str):
     otp = str(secrets.randbelow(10000)).zfill(4)
+    print(otp)
     message = f"Your OTP for authentication is {otp}"
-    async with aiosmtplib.SMTP(hostname="smtp.gmail.com", port=587) as smtp:
-        await smtp.connect()
-        await smtp.starttls()
-        await smtp.login(SERVER_MAIL, SERVER_PASS)
-        await smtp.sendmail(SERVER_MAIL, email, message)
-        await smtp.quit()
+    print("here")
+    try:
+        async with aiosmtplib.SMTP(hostname="smtp.gmail.com", port=587) as smtp:
+            await smtp.connect()
+            print("connected")
+            await smtp.starttls() 
+            await smtp.login(SERVER_MAIL, SERVER_PASS)
+            await smtp.sendmail(SERVER_MAIL, email, message)
+            await smtp.quit()
+    except Exception as e:
+        print(f"Error sending email: {e}")
     return otp
 
 @app.post("/token/face-auth")
@@ -137,6 +143,7 @@ async def user_face_auth(username:str,file:UploadFile = File(...)):
     known_face_encoding = pickle.loads(user["known_encoding"])
     result = face_recognition.compare_faces([known_face_encoding], unknown_face_encoding)
     if result[0] ==True:
+        print(user["email"])
         otp = await send_otp(user["email"])
         collection/update_one({"username":user["username"]},{"$set":{"otp":otp}})
         return {"msg":"OTP sent to your registered mail."}
