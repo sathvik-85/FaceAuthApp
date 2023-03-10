@@ -5,6 +5,8 @@ import PIL
 import time
 import bcrypt
 import pickle
+import secrets
+import aiosmtplib
 import face_recognition
 import numpy as np
 from PIL import Image
@@ -31,6 +33,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 ALGORITHM = os.environ.get("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES")
 MONGO_CONN = os.environ.get("MONGO_CONN")
+SERVER_MAIL = os.environ.get("SERVER_MAIL")
+SERVER_PASS = os.environ.get("SERVER_PASS")
 
 
 client = MongoClient(MONGO_CONN)
@@ -67,10 +71,6 @@ def input_validation(username:str, password:str):
         )
 
     return True
-
-
-
-
 
 def token_check(token :str = Depends(oauth2_scheme)):
     try:
@@ -112,8 +112,18 @@ async def file_to_nparray(file):
     pil_image = Image.open(io.BytesIO(file_content))
     return np.array(pil_image)
 
+async def send_otp(email: str):
+    otp = str(secrets.randbelow(10000)).zfill(4)
+    message = f"Your OTP for authentication is {otp}"
+    async with aiosmtplib.SMTP(hostname="smtp.gmail.com", port=587) as smtp:
+        await smtp.connect()
+        await smtp.starttls()
+        await smtp.login(SERVER_MAIL, SERVER_PASS)
+        await smtp.sendmail(SERVER_MAIL, email, message)
+        await smtp.quit()
+    return otp
 
-@app.post("/token/face-auth", response_model = Token)
+@app.post("/token/face-auth")
 async def user_face_auth(username:str,file:UploadFile = File(...)):
     user = collection.find_one({"username":username})
     if not user:
@@ -127,10 +137,13 @@ async def user_face_auth(username:str,file:UploadFile = File(...)):
     known_face_encoding = pickle.loads(user["known_encoding"])
     result = face_recognition.compare_faces([known_face_encoding], unknown_face_encoding)
     if result[0] ==True:
-        access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
-        access_token = create_access_token(
-        data={"sub": user["username"]}, expires_delta=access_token_expires)
-        return {"access_token":access_token,"token_type":"Bearer"}
+        otp = await send_otp(user["email"])
+        collection/update_one({"username":user["username"]},{"$set":{"otp":otp}})
+        return {"msg":"OTP sent to your registered mail."}
+        # access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+        # access_token = create_access_token(
+        # data={"sub": user["username"]}, expires_delta=access_token_expires)
+        # return {"access_token":access_token,"token_type":"Bearer"}
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -162,7 +175,6 @@ async def user_cred_login(username:str,password:str):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-
 @app.get("/private")
 async def user_private_info(user:None = Depends(token_check)):
     return {"msg":"This is a secret","user":user}
@@ -175,9 +187,8 @@ async def user_home(user:str = Depends(token_check)):
 async def user_home():  
     return {"msg":"hello"}
 
-
 @app.post("/register")
-async def user_register(email:str,ile:UploadFile=File(...),username:str = Form(), password:str = Form()):
+async def user_register(email:str = Form(),file:UploadFile=File(...),username:str = Form(), password:str = Form()):
     user_is_valid = input_validation(username,password)
     if user_is_valid:
         try:
