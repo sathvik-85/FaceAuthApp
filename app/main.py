@@ -113,20 +113,32 @@ async def file_to_nparray(file):
     return np.array(pil_image)
 
 async def send_otp(email: str):
-    otp = str(secrets.randbelow(10000)).zfill(4)
-    print(otp)
+     otp = str(secrets.randbelow(10000)).zfill(4)
     message = f"Your OTP for authentication is {otp}"
-    print("here")
+    
     try:
-        async with aiosmtplib.SMTP(hostname="smtp.gmail.com", port=587) as smtp:
-            await smtp.connect()
-            print("connected")
-            await smtp.starttls() 
-            await smtp.login(SERVER_MAIL, SERVER_PASS)
-            await smtp.sendmail(SERVER_MAIL, email, message)
-            await smtp.quit()
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = SERVER_MAIL
+        msg['To'] = email
+        msg['Subject'] = 'OTP Verification'
+        msg.attach(MIMEText(message, 'plain'))
+
+        # Connect to SMTP server
+        with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+            smtp.ehlo()
+            smtp.starttls()
+            smtp.ehlo()
+
+            # Login to SMTP server
+            smtp.login(SERVER_MAIL, SERVER_PASS)
+
+            # Send email
+            smtp.sendmail(SERVER_MAIL, email, msg.as_string())
+
     except Exception as e:
         print(f"Error sending email: {e}")
+        
     return otp
 
 @app.post("/token/face-auth")
