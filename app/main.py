@@ -177,7 +177,7 @@ async def user_home():
 
 
 @app.post("/register")
-async def user_register(file:UploadFile=File(...),username:str = Form(), password:str = Form()):
+async def user_register(email:str,ile:UploadFile=File(...),username:str = Form(), password:str = Form()):
     user_is_valid = input_validation(username,password)
     if user_is_valid:
         try:
@@ -194,7 +194,7 @@ async def user_register(file:UploadFile=File(...),username:str = Form(), passwor
         known_face_encoding = face_recognition.face_encodings(known_img)[0]
         serialized_encoding = serialize(known_face_encoding)
         if not response:
-            collection.insert_one({"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2],"known_encoding":serialized_encoding})
+            collection.insert_one({"email":email,"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2],"known_encoding":serialized_encoding})
         else:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
