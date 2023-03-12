@@ -10,7 +10,7 @@ import smtplib
 import face_recognition
 import numpy as np
 from PIL import Image
-from pymongo import MongoClient
+from pymongo import MongoClient,ASCENDING
 from starlette.responses import JSONResponse
 from datetime import datetime, timedelta
 from jose import jwt,JWTError
@@ -48,7 +48,8 @@ user_collection = db[f"{user_collection}"]
 otp_collection = db[f"{otp_collection}"]
 
 #TTL
-otp_collection.create_index([("createdAt", pymongo.ASCENDING)], expireAfterSeconds=120, unique=True)
+otp_collection.drop_index("createdAt_1")
+otp_collection.create_index([("createdAt", ASCENDING)], expireAfterSeconds=120, unique=True)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")    
 user_db = {}
