@@ -30,7 +30,8 @@ load_dotenv(dotenv_path)
 
 
 DB = os.environ.get("DB")
-COLLECTION = os.environ.get("COLLECTION")
+user_collection = os.environ.get("USER_COLLECTION")
+otp_collection = os.environ.get("OTP_COLLECTION")
 SECRET_KEY = os.environ.get("SECRET_KEY")
 ALGORITHM = os.environ.get("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES")
@@ -44,8 +45,8 @@ client = MongoClient(MONGO_CONN)
 app = FastAPI()
 
 db = client[f"{DB}"]
-collection = db[f"{COLLECTION}"]
-
+user_collection = db[f"{user_collection}"]
+otp_collection = db[f"{otp_collection}"]
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")    
 user_db = {}
@@ -125,28 +126,39 @@ async def send_otp(email: str):
         msg['To'] = email
         msg['Subject'] = 'OTP Verification'
         msg.attach(MIMEText(message, 'plain'))
-
-        # Connect to SMTP server
         with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
             smtp.ehlo()
             smtp.starttls()
             smtp.ehlo()
-
-            # Login to SMTP server
             smtp.login(SERVER_MAIL, SERVER_PASS)
-
-            # Send email
             smtp.sendmail(SERVER_MAIL, email, msg.as_string())
-            print("sent mail")
+
 
     except Exception as e:
         print(f"Error sending email: {e}")
         
     return otp
 
+@app.post("/token/otp-verify")
+async def user_otp_verify(email:str, otp:str):
+    is_a_user = otp_collection.find_one({"email":email,"otp":otp})
+    user_data = user_collection.find_one({"email":email})
+    if not is_a_user:
+        raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="OTP Verification Failed",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+    access_token = create_access_token(
+        data={"sub": user_data["username"]}, expires_delta=access_token_expires)
+        
+    return {"access_token":access_token, "token_type":"Bearer"}
+    
+
 @app.post("/token/face-auth")
-async def user_face_auth(username:str,file:UploadFile = File(...)):
-    user = collection.find_one({"username":username})
+async def user_face_auth(email:str,file:UploadFile = File(...)):
+    user = user_collection.find_one({"email":email})
     if not user:
         raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -160,7 +172,7 @@ async def user_face_auth(username:str,file:UploadFile = File(...)):
     if result[0] ==True:
         print(user["email"])
         otp = await send_otp(user["email"])
-        collection.update_one({"username":user["username"]},{"$set":{"otp":otp}})
+        otp_collection.insert_one({"email":email,"otp":otp})
         return {"msg":"OTP sent to your registered mail."}
         # access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
         # access_token = create_access_token(
@@ -175,7 +187,7 @@ async def user_face_auth(username:str,file:UploadFile = File(...)):
 
 @app.post("/token/cred-login", response_model = Token)
 async def user_cred_login(username:str,password:str):
-    user = collection.find_one({"username":username})
+    user = user_collection.find_one({"username":username})
 
     if not user:
         raise  HTTPException(
@@ -223,11 +235,11 @@ async def user_register(email:str = Form(),file:UploadFile=File(...),username:st
             )
         salt = bcrypt.gensalt()
         hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-        response = collection.find_one({"username":username})
+        response = user_collection.find_one({"username":username})
         known_face_encoding = face_recognition.face_encodings(known_img)[0]
         serialized_encoding = serialize(known_face_encoding)
         if not response:
-            collection.insert_one({"email":email,"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2],"known_encoding":serialized_encoding})
+            user_collection.insert_one({"email":email,"username":username, "password":hashed,"salt":salt,"created_at":str(time.time()).split(".")[-2],"known_encoding":serialized_encoding})
         else:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
