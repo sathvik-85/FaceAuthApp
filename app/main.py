@@ -48,8 +48,7 @@ user_collection = db[f"{user_collection}"]
 otp_collection = db[f"{otp_collection}"]
 
 #TTL
-otp_collection.create_index("createdAt", expireAfterSeconds=120,unique=True)
-
+otp_collection.create_index([("createdAt", pymongo.ASCENDING)], expireAfterSeconds=120, unique=True)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")    
 user_db = {}
