@@ -39,7 +39,6 @@ MONGO_CONN = os.environ.get("MONGO_CONN")
 SERVER_MAIL = os.environ.get("SERVER_MAIL")
 SERVER_PASS = os.environ.get("SERVER_PASS")
 
-
 client = MongoClient(MONGO_CONN)
 
 app = FastAPI()
