@@ -48,6 +48,10 @@ db = client[f"{DB}"]
 user_collection = db[f"{user_collection}"]
 otp_collection = db[f"{otp_collection}"]
 
+#TTL
+otp_collection.create_index("createdAt", expireAfterSeconds=10)
+
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")    
 user_db = {}
 
@@ -120,7 +124,6 @@ async def send_otp(email: str):
     message = f"Your OTP for authentication is {otp}"
     
     try:
-        # Create message
         msg = MIMEMultipart()
         msg['From'] = SERVER_MAIL
         msg['To'] = email
@@ -172,7 +175,7 @@ async def user_face_auth(email:str,file:UploadFile = File(...)):
     if result[0] ==True:
         print(user["email"])
         otp = await send_otp(user["email"])
-        otp_collection.insert_one({"email":email,"otp":otp})
+        otp_collection.insert_one({"email":email,"otp":otp,"createdAt": datetime.utcnow()})
         return {"msg":"OTP sent to your registered mail."}
         # access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
         # access_token = create_access_token(
